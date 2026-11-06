@@ -3,7 +3,8 @@ package middleware
 import (
 	// "log"  // 提示：打印耗时日志需使用 log 包
 	// "time" // 提示：计算耗时需使用 time 包
-
+	"log"
+    "time"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,7 +18,8 @@ import (
 func CostTimeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 请在此处补全耗时统计洋葱模型逻辑（约 3 行代码）
-
+        start :=time.Now()
 		c.Next()
+		log.Printf("[耗时统计] %s | %v", c.Request.URL.Path, time.Since(start))
 	}
 }

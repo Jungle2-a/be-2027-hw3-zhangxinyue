@@ -21,6 +21,10 @@ func NewUserService() *UserService {
 // 2. 数据持久化：若不存在，将用户信息存入 storage，返回 nil
 func (s *UserService) Register(username, password, email string, age int) error {
 	// 请在下方补全业务逻辑（代码仅需 5~8 行）
+	if _,exists := s.storage.Load(username); exists{
+		return errors.New("用户名已被占用")
+	}
+	s.storage.Store(username,password)
 
-	return errors.New("TODO: 尚未实现 Register 业务逻辑")
+	return nil
 }

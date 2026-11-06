@@ -2,7 +2,7 @@ package middleware
 
 import (
 	// "net/http" // 提示：返回 401 状态码需使用 net/http 包
-
+    "net/http"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,6 +19,14 @@ import (
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 请在此处补全 Token 拦截校验逻辑（约 6~8 行代码）
+		token := c.GetHeader("Authorization")
+		if token ==""|| token !="tenzor-token"{
+			c.JSON(http.StatusUnauthorized,gin.H{
+				"error":"未提供有效凭证",
+			})
+			c.Abort()
+			return
+		}
 
 		c.Next()
 	}

@@ -1,0 +1,87 @@
+name: Register CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    name: Run Layered Register Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Build Service
+        run: |
+          go mod tidy
+          go build -o server .
+
+      - name: Start Service
+        run: |
+          ./server > server.log 2>&1 &
+          sleep 2
+
+      - name: 1. Test Valid Registration (Randomized Data, Expect 200)
+        run: |
+          RANDOM_USER="usr$RANDOM"
+          RANDOM_MAIL="mail$RANDOM@xjtu.edu.cn"
+          echo "Testing registration with: $RANDOM_USER, email: $RANDOM_MAIL"
+          status=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8080/api/v1/users/register \
+            -H "Content-Type: application/json" \
+            -d "{\"username\":\"$RANDOM_USER\",\"password\":\"secret123\",\"email\":\"$RANDOM_MAIL\",\"age\":20}")
+          echo "Register Status: $status"
+          [ "$status" -eq 200 ]
+          echo "$RANDOM_USER" > registered_user.txt
+
+      - name: 2. Test Duplicate Registration (Expect 409 Conflict)
+        run: |
+          EXISTING_USER=$(cat registered_user.txt)
+          echo "Testing duplicate registration for: $EXISTING_USER"
+          status=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8080/api/v1/users/register \
+            -H "Content-Type: application/json" \
+            -d "{\"username\":\"$EXISTING_USER\",\"password\":\"secret123\",\"email\":\"another@xjtu.edu.cn\",\"age\":21}")
+          echo "Duplicate Register Status: $status"
+          [ "$status" -eq 409 ]
+
+      - name: 3. Test Invalid Parameters - Short Password (Expect 400)
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8080/api/v1/users/register \
+            -H "Content-Type: application/json" \
+            -d "{\"username\":\"validuser\",\"password\":\"123\",\"email\":\"test@xjtu.edu.cn\"}")
+          echo "Short Password Status: $status"
+          [ "$status" -eq 400 ]
+
+      - name: 4. Test Invalid Parameters - Illegal Email Format (Expect 400)
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8080/api/v1/users/register \
+            -H "Content-Type: application/json" \
+            -d "{\"username\":\"validuser\",\"password\":\"secret123\",\"email\":\"not-a-valid-email\"}")
+          echo "Illegal Email Status: $status"
+          [ "$status" -eq 400 ]
+
+      - name: 5. Detect Optional Bonus - Custom Middleware (CostTime / Auth)
+        continue-on-error: true
+        run: |
+          # 1. 探测服务端日志是否输出了自定义耗时统计（CostTimeMiddleware）
+          cost_log=$(grep -E "耗时" server.log || true)
+          if [ -n "$cost_log" ]; then
+            echo "🎉 【加分项达成】检测到学员实现了自定义耗时统计中间件:"
+            echo "$cost_log"
+          else
+            echo "ℹ️ 【加分项提示】未检测到自定义耗时统计日志输出（选做项，不影响必做项满分及绿勾）"
+          fi
+
+          # 2. 探测是否启用了受保护路由 Token 鉴权中间件（AuthMiddleware）
+          auth_status=$(curl -s -o /dev/null -w "%{http_code}" -X GET http://localhost:8080/api/v1/protected/ping || true)
+          if [ "$auth_status" = "401" ]; then
+            echo "🎉 【加分项达成】检测到学员实现了 Token 鉴权拦截中间件（未带凭证返回 401）"
+          fi

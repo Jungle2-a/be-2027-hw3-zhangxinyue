@@ -56,10 +56,4 @@ func (u *UserController) Register(c *gin.Context) {
 		"message":"注册成功",
 		"username":req.Username,
 	})
-
-
-	c.JSON(http.StatusNotImplemented, gin.H{
-		"code":    501,
-		"message": "TODO: 尚未实现 Controller Register 接口",
-	})
 }

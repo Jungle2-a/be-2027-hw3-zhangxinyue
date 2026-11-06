@@ -94,19 +94,19 @@ go run main.go
 
 *对应图片路径：`docs/images/register_200.png`*
 
-![注册成功截图](docs/images/register_200.png)
+![注册成功截图](docs/images/register_200.png.png)
 
 ### 2. 用户名重复冲突（HTTP 409）
 
 *对应图片路径：`docs/images/register_409.png`*
 
-![重复注册冲突截图](docs/images/register_409.png)
+![重复注册冲突截图](docs/images/register_409.png.png)
 
 ### 3. 参数校验失败（HTTP 400）
 
 *对应图片路径：`docs/images/register_400.png`*
 
-![参数校验失败截图](docs/images/register_400.png)
+![参数校验失败截图](docs/images/register_400.png.png)
 
 ### 4. 选做中间件抓包（选做）
 
